@@ -1,0 +1,36 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: StarbucksSystem
+  profiles:
+    active: dev
+#  # mybatis-plus 会传递引入 spring-boot-starter-jdbc，没有数据源配置启动会直接失败，请按本机情况修改
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://127.0.0.1:3306/starbucks?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+#    username: root
+#    password: 123456
+#    hikari:
+#      minimum-idle: 5
+#      maximum-pool-size: 20
+#      connection-timeout: 30000
+#
+#mybatis-plus:
+#  mapper-locations: classpath*:/mapper/**/*.xml
+#  type-aliases-package: com.whm.starbucks.entity
+#  configuration:
+#    map-underscore-to-camel-case: true
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#  global-config:
+#    banner: false
+#    db-config:
+#      id-type: auto
+
+logging:
+  level:
+    root: info
+    com.whm.starbucks: debug

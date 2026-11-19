@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whm.starbucks.dao.OrdersRepository">
+    <select id="selectOrderByUserPhone" resultType="com.whm.starbucks.pojo.entity.Orders">
+        SELECT * FROM orders WHERE user_phone = #{phone} AND is_deleted = 0 ORDER BY id DESC
+    </select>
+
+    <select id="selectOrderByNo" resultType="com.whm.starbucks.pojo.entity.Orders">
+        SELECT * FROM orders WHERE order_no = #{orderNo} AND is_deleted = 0
+    </select>
+
+    <!-- keyProperty 必须是 orders.id：Mapper 方法用了 @Param("orders")，参数被包装成 Map，主键要回填到 map 内的 orders 对象上 -->
+    <insert id="insertOrder" parameterType="com.whm.starbucks.pojo.entity.Orders" useGeneratedKeys="true" keyProperty="orders.id">
+        INSERT INTO orders (order_no, user_id, user_phone, store_id, fulfillment_type, order_status, total_amount, discount_amount, pay_amount, pickup_code, estimated_ready_time, remark, is_deleted, gmt_create, gmt_modified)
+        VALUES (#{orders.orderNo}, #{orders.userId}, #{orders.userPhone}, #{orders.storeId}, #{orders.fulfillmentType}, #{orders.orderStatus}, #{orders.totalAmount}, #{orders.discountAmount}, #{orders.payAmount}, #{orders.pickupCode}, #{orders.estimatedReadyTime}, #{orders.remark}, #{orders.isDeleted}, #{orders.gmtCreate}, #{orders.gmtModified})
+    </insert>
+
+    <update id="updateOrder" parameterType="com.whm.starbucks.pojo.entity.Orders">
+        UPDATE orders SET order_status = #{orders.orderStatus}, pay_amount = #{orders.payAmount}, pickup_code = #{orders.pickupCode}, estimated_ready_time = #{orders.estimatedReadyTime}, remark = #{orders.remark}, is_deleted = #{orders.isDeleted}, gmt_create = #{orders.gmtCreate}, gmt_modified = #{orders.gmtModified} WHERE order_no = #{orders.orderNo}
+    </update>
+</mapper>

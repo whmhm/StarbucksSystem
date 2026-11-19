@@ -1,0 +1,54 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: StarbucksSystem
+  profiles:
+    active: dev
+  # mybatis-plus 会传递引入 spring-boot-starter-jdbc，没有数据源配置启动会直接失败，请按本机情况修改
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/starbucks?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:your_password}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+  redis:
+    host: 127.0.0.1
+    port: 6380
+#    password: ${REDIS_PASSWORD:} # 本地无密码留空
+    database: 0
+    timeout: 3000ms
+#    lettuce:
+#      pool:
+#        max-active: 16      # 最大连接数，按并发量调整
+#        max-idle: 8
+#        min-idle: 2
+#        max-wait: 2000ms
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.whm.starbucks.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+
+jwt:
+  secret: ${JWT_SECRET:change_me_to_a_long_random_secret}
+  access-expiration: 1800000   # 30分钟
+  refresh-expiration: 604800000 # 7天
+
+
+logging:
+  level:
+    root: info
+    com.whm.starbucks: debug

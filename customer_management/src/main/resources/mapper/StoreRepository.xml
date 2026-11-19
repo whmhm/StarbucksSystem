@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whm.starbucks.dao.StoreRepository">
+    <select id="findByStoreId" resultType="com.whm.starbucks.pojo.entity.Store">
+        SELECT * FROM store WHERE id = #{storeId} AND store_status = 1 AND is_deleted = 0
+    </select>
+    <select id="findAll" resultType="com.whm.starbucks.pojo.entity.Store">
+        SELECT * FROM store WHERE store_status = 1 AND is_deleted = 0
+    </select>
+    <select id="findByStoreIds" resultType="com.whm.starbucks.pojo.entity.Store">
+        SELECT * FROM store
+        WHERE id IN
+        <foreach item="storeId" collection="storeIds" separator="," open="(" close=")">
+            #{storeId}
+        </foreach>
+    </select>
+    <update id="updateStoreLocation">
+        UPDATE store SET longitude = #{longitude}, latitude = #{latitude} WHERE id = #{storeId}
+    </update>
+
+</mapper>

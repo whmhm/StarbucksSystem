@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whm.starbucks.dao.OrderItemRepository">
+    <select id="selectOrderItemsByOrderId" resultType="com.whm.starbucks.pojo.entity.OrderItem">
+        SELECT * FROM order_item WHERE order_id = #{orderId}
+    </select>
+    <insert id="insertOrderItem" parameterType="com.whm.starbucks.pojo.entity.OrderItem">
+        INSERT INTO order_item (order_id, product_id, product_name, quantity, unit_price, customization_price, customization_snapshot, item_total_price)
+        VALUES (#{orderItem.orderId}, #{orderItem.productId}, #{orderItem.productName}, #{orderItem.quantity}, #{orderItem.unitPrice}, #{orderItem.customizationPrice}, #{orderItem.customizationSnapshot}, #{orderItem.itemTotalPrice})
+    </insert>
+
+    <insert id="insertOrderItems">
+        INSERT INTO order_item (order_id, product_id, product_name, quantity, unit_price, customization_price, customization_snapshot, item_total_price)
+        VALUES
+        <foreach collection="items" item="it" separator=",">
+            (#{it.orderId}, #{it.productId}, #{it.productName}, #{it.quantity}, #{it.unitPrice}, #{it.customizationPrice}, #{it.customizationSnapshot}, #{it.itemTotalPrice})
+        </foreach>
+    </insert>
+</mapper>

@@ -1,0 +1,67 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### 敏感配置（本地真实凭据，禁止提交） ###
+# customer_management 的 application.yml 含数据库账号密码与 JWT 密钥，仓库中只保留 application.yml.example
+/customer_management/src/main/resources/application.yml
+**/application-local.yml
+**/application-local.yaml
+**/application-prod.yml
+**/application-prod.yaml
+.env
+.env.*
+*.env
+
+### 日志 ###
+logs/
+**/logs/
+*.log
+
+### IntelliJ IDEA 本地配置 ###
+.idea/workspace.xml
+.idea/encodings.xml
+.idea/misc.xml
+.idea/uiDesigner.xml
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/httpRequests/
+.idea/shelf/
+
+### 系统文件 ###
+Thumbs.db

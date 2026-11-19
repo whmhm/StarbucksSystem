@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whm.starbucks.dao.UserRepository">
+
+    <select id="getUserById" resultType="com.whm.starbucks.pojo.entity.User">
+        SELECT * FROM user WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <insert id="registerUser" parameterType="com.whm.starbucks.pojo.entity.User">
+        INSERT INTO user (nickname, password, phone) VALUES (#{user.nickname}, #{user.password}, #{user.phone})
+    </insert>
+
+    <select id="getUserByPhone" resultType="com.whm.starbucks.pojo.entity.User">
+        SELECT * FROM user WHERE phone = #{phone} AND is_deleted = 0
+    </select>
+
+    <update id="deleteUserById" parameterType="com.whm.starbucks.pojo.entity.User">
+        UPDATE user SET is_deleted = 1 WHERE id = #{id}
+    </update>
+
+
+
+</mapper>
+
