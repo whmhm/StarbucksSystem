@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 第一行 DOCTYPE 不能漏：漏了会报「文档根元素必须匹配 DOCTYPE 根 null」 -->
+<mapper namespace="com.whm.starbucks.dao.PaymentRecordRepository">
+
+    <!-- 公共列清单：显式列出而不是 SELECT *，
+         这样以后表里加列不会因为顺序/多余列影响 resultType 映射，也避免误带出敏感字段 -->
+    <sql id="Base_Columns">
+        id, order_id, pay_channel, pay_amount, transaction_no, pay_status,
+        is_deleted, gmt_create, gmt_modified
+    </sql>
+
+    <!-- 幂等校验入口：transaction_no 上有唯一索引，这条一定走索引 -->
+    <select id="selectByTransactionNo" resultType="com.whm.starbucks.pojo.entity.PaymentRecord">
+        SELECT <include refid="Base_Columns"/>
+        FROM payment_record
+        WHERE transaction_no = #{transactionNo}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 同一订单只允许一条成功流水：这里不加 LIMIT 1 是刻意的，
+         若查出多条说明幂等逻辑已经出问题，应让上层看到异常而不是静默取第一条 -->
+    <select id="selectPaidByOrderId" resultType="com.whm.starbucks.pojo.entity.PaymentRecord">
+        SELECT <include refid="Base_Columns"/>
+        FROM payment_record
+        WHERE order_id = #{orderId}
+          AND pay_status = 1
+          AND is_deleted = 0
+    </select>
+
+    <!-- keyProperty 必须是 record.id：方法参数加了 @Param("record")，
+         参数被包装成 Map，主键要回填到 Map 里的 record 对象上 -->
+    <insert id="insertPaymentRecord" parameterType="com.whm.starbucks.pojo.entity.PaymentRecord"
+            useGeneratedKeys="true" keyProperty="record.id" keyColumn="id">
+        INSERT INTO payment_record
+            (order_id, pay_channel, pay_amount, transaction_no, pay_status, is_deleted, gmt_create, gmt_modified)
+        VALUES
+            (#{record.orderId}, #{record.payChannel}, #{record.payAmount}, #{record.transactionNo},
+             #{record.payStatus}, #{record.isDeleted}, #{record.gmtCreate}, #{record.gmtModified})
+    </insert>
+
+    <!-- 状态守卫写在 WHERE 里，而不是先查再改：
+         先查再改在并发下会有「两个请求都读到 0，都去更新」的窗口。
+         这里 pay_status IN (0, 2) 表示「未支付或支付失败的流水可以置为成功」。 -->
+    <update id="updatePaymentSuccess">
+        UPDATE payment_record
+        SET pay_status   = 1,
+            gmt_modified = NOW()
+        WHERE id = #{record.id}
+          AND pay_status IN (0, 2)
+          AND is_deleted = 0
+    </update>
+
+    <!-- 只有「已支付成功」的流水才能退款，pay_status = 1 是必要守卫 -->
+    <update id="updatePaymentRefunded">
+        UPDATE payment_record
+        SET pay_status   = 3,
+            gmt_modified = NOW()
+        WHERE id = #{record.id}
+          AND pay_status = 1
+          AND is_deleted = 0
+    </update>
+
+</mapper>

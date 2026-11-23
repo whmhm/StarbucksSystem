@@ -9,6 +9,7 @@ import com.whm.starbucks.dao.ProductRepository;
 import com.whm.starbucks.exceptions.BizException;
 import com.whm.starbucks.pojo.dto.CartDto;
 import com.whm.starbucks.pojo.dto.CartItemDto;
+import com.whm.starbucks.pojo.dto.CartItemUpdateDto;
 import com.whm.starbucks.pojo.entity.Cart;
 import com.whm.starbucks.pojo.entity.CartItem;
 import com.whm.starbucks.pojo.entity.Product;
@@ -153,15 +154,58 @@ public class CartService {
     }
 
     /**
-     * 修改数量 / 删除单行暂未开放（Controller 侧对应接口已注释）。
-     * 实现时必须校验该行属于当前 userId 的购物车，防止越权改别人的车。
+     * 修改购物车单行数量。
+     *
+     * 签名变更说明：原来传的是 (userId, storeId, productId, quantity)，
+     * 但「同商品 + 不同客制化」在购物车里是多行，用 productId 定位会改错行，
+     * 所以改成用明细主键 cartItemId 定位（前端在 /car/list 的返回里已经能拿到 id）。
+     *
+     * TODO(你来实现)，步骤：
+     *   1. 入参边界：userId 为 null → BizException(401, "未登录或登录已失效")；
+     *      dto / cartItemId 为空 → BizException("购物车条目不能为空")；
+     *      quantity == null 或 < 1 → BizException("商品数量必须大于0")；
+     *      quantity > MAX_QUANTITY → BizException("单个商品数量不能超过" + MAX_QUANTITY + "件")。
+     *   2. 取车头：cartRepository.getCart(userId, storeId)；
+     *      为 null → BizException(404, "购物车不存在")。
+     *      【注意】这里故意不用 getOrCreateCart：改数量是「改已有数据」，
+     *      顺手给用户建一个空车是脏写，会让「null 车」和「空车」两种语义混在一起。
+     *   3. 取行并校验归属：cartItemRepository.selectByIdAndCartId(cartItemId, cart.getId())；
+     *      为 null → BizException(403, "购物车中没有该商品")
+     *      （不区分「不存在」和「不属于你」，避免泄露别人购物车的明细主键是否存在）。
+     *   4. 重新取价（关键）：用 loadStoreProducts(storeId) 拿到当前门店价与库存，
+     *      不能用行里原有的 unitPrice —— 购物车可能是几天前加的，商品可能已调价或下架。
+     *      商品不在 map 里 → BizException("商品在所选门店不可售"）；
+     *      库存校验走 checkQuantityAndStock(product, quantity)。
+     *   5. 重算行金额：itemTotalPrice(unitPrice, customizationPrice, quantity)，
+     *      customizationPrice 沿用行里已存的（客制化选择没变，不重新计价）。
+     *   6. 写库：cartItemRepository.updateCartItemQuantity(item)，
+     *      rows != 1 → BizException(409, "购物车商品已变更，请刷新后重试")。
+     *   7. 返回 buildCartVo(cart)，让前端一次拿到整车最新总额。
+     *
+     * 事务：加 @Transactional(rollbackFor = Exception.class)，因为「读车头 + 改行」跨两次 DB 操作。
      */
-    public CartVo updateCartItem(Long userId, String storeId, Long productId, Integer quantity) {
-        return null;
+    public CartVo updateCartItem(Long userId, CartItemUpdateDto dto) {
+        throw new BizException(501, "功能待实现：CartService.updateCartItem");
     }
 
-    public CartVo deleteCartItem(Long userId, String storeId, Long productId) {
-        return null;
+    /**
+     * 删除购物车单行。
+     *
+     * TODO(你来实现)，步骤：
+     *   1. 入参边界：userId null → 401；dto / cartItemId 为空 → BizException("购物车条目不能为空")。
+     *   2. 取车头：cartRepository.getCart(userId, storeId)；
+     *      为 null → 直接返回空车（用户本来就没有车，删除应该是幂等的，没必要报错）。
+     *   3. 校验归属：selectByIdAndCartId(cartItemId, cart.getId())；
+     *      为 null → 也直接返回当前购物车（幂等：重复点删除不应报错）。
+     *   4. 删除：cartItemRepository.deleteById(cartItemId)。
+     *      【不要】只按 cartItemId 删而不验归属——那样前端改个 id 就能删别人的行。
+     *   5. 返回 buildCartVo(cart)。
+     *
+     * 不删车头：空车保留，因为 cart 有 uk_user_store 唯一键，
+     * 删了下次加购又要重建，反而增加撞唯一键的概率。
+     */
+    public CartVo deleteCartItem(Long userId, CartItemUpdateDto dto) {
+        throw new BizException(501, "功能待实现：CartService.deleteCartItem");
     }
 
     /**

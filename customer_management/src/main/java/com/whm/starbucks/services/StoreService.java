@@ -67,6 +67,16 @@ public class StoreService {
     public List<StoreVo> getNearbyStores(
             Double longitude, Double latitude, Double radiusKm
     ) {
+        // 越界经纬度会让 Redis GEO 直接抛 IllegalArgumentException 并兜底成 500，必须在校验层拦住
+        if (longitude != null && (longitude < -180 || longitude > 180)) {
+            throw new BizException("经度必须在 -180 到 180 之间");
+        }
+        if (latitude != null && (latitude < -90 || latitude > 90)) {
+            throw new BizException("纬度必须在 -90 到 90 之间");
+        }
+        if (radiusKm == null || radiusKm <= 0) {
+            throw new BizException("搜索半径必须大于 0 公里");
+        }
         // 用户没有提供经纬度 查全部的
         if(longitude == null || latitude == null) {
             return storeRepository.findAll().stream().map(this::toVOWithoutDistance).collect(Collectors.toList());
@@ -99,13 +109,8 @@ public class StoreService {
         return storeIds.stream()
                 .filter(storeMap::containsKey)
                 .map(id -> {
-                    Store s = storeMap.get(id);
-                    StoreVo vo = new StoreVo();
-                    vo.setStoreId(s.getId());
-                    vo.setStoreName(s.getStoreName());
-                    vo.setAddress(s.getAddress());
-                    vo.setStoreStatus(s.getStoreStatus());
-                    vo.setBusinessHours(s.getBusinessHours());
+                    StoreVo vo = toVOWithoutDistance(storeMap.get(id));
+                    vo.setDistance(distanceMap.get(id));
                     return vo;
                 })
                 .collect(Collectors.toList());
@@ -114,17 +119,26 @@ public class StoreService {
     @Transactional
     public void updateStoreLocation(StoreDto storeDto) {
         // 新增/更新商店坐标时 把坐标写入redis
+        if (storeDto.getStoreId() == null || storeDto.getLatitude() == null || storeDto.getLongitude() == null) {
+            throw new BizException("门店ID与经纬度不能为空");
+        }
+        // Redis GEO 的 Point 入参顺序是 (经度, 纬度)，与 SQL 中 longitude/latitude 的顺序保持一致
+        double lng = storeDto.getLongitude().doubleValue();
+        double lat = storeDto.getLatitude().doubleValue();
+        if (lng < -180 || lng > 180) {
+            throw new BizException("经度必须在 -180 到 180 之间");
+        }
+        if (lat < -90 || lat > 90) {
+            throw new BizException("纬度必须在 -90 到 90 之间");
+        }
 
         // 1、存mysql 2、更新redis
-        Long result = storeRepository.updateStoreLocation(storeDto.getStoreId(), storeDto.getLatitude().doubleValue(), storeDto.getLongitude().doubleValue());
+        Long result = storeRepository.updateStoreLocation(storeDto.getStoreId(), lng, lat);
         if (result == 0) {
             throw new BizException(500,"更新门店坐标失败");
 
         }
-        redisTemplate.opsForGeo().add(GEO_KEY,
-                new Point(storeDto.getLatitude().doubleValue(),
-                        storeDto.getLongitude().doubleValue()),
-                storeDto.getStoreId().toString());
+        redisTemplate.opsForGeo().add(GEO_KEY, new Point(lng, lat), storeDto.getStoreId().toString());
 
     }
 

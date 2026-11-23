@@ -1,6 +1,7 @@
 package com.whm.starbucks.controller;
 
 import com.whm.starbucks.pojo.dto.CartDto;
+import com.whm.starbucks.pojo.dto.CartItemUpdateDto;
 import com.whm.starbucks.pojo.vo.CartItemVo;
 import com.whm.starbucks.pojo.vo.CartVo;
 import com.whm.starbucks.pojo.vo.ResponseVo;
@@ -39,17 +40,26 @@ public class CartController {
         return ResponseVo.success("添加成功", cartVo);
     }
 
-//    @PostMapping("/update/item")
-//    public ResponseVo<CartVo> updateCartItem(@AuthenticationPrincipal Long userId, @RequestBody CartDto cartDto) {
-//        CartVo  cartVo = cartService.updateCartItem(userId, cartDto.getStoreId(), cartDto.getProductId(), cartDto.getQuantity());
-//        return ResponseVo.success("修改成功", cartVo);
-//    }
+    /**
+     * 修改数量。
+     * 前置：CartService.updateCartItem 已实现（现在会抛 501）。
+     * 请求体：{ "storeId": 1, "cartItemId": 12, "quantity": 3 }
+     */
+    @PostMapping("/update/item")
+    public ResponseVo<CartVo> updateCartItem(@AuthenticationPrincipal Long userId, @RequestBody CartItemUpdateDto dto) {
+        CartVo cartVo = cartService.updateCartItem(userId, dto);
+        return ResponseVo.success("修改成功", cartVo);
+    }
 
-//    @PostMapping("/delete/item")
-//    public ResponseVo<CartVo> deleteCartItem(@AuthenticationPrincipal Long userId, @RequestBody CartDto cartDto) {
-//        CartVo cartVo = cartService.deleteCartItem(userId, cartDto.getStoreId(), cartDto.getProductId());
-//        return ResponseVo.success("删除成功", cartVo);
-//    }
+    /**
+     * 删除单行（幂等：重复删同一行不报错，返回当前购物车）。
+     * 请求体：{ "storeId": 1, "cartItemId": 12 }
+     */
+    @PostMapping("/delete/item")
+    public ResponseVo<CartVo> deleteCartItem(@AuthenticationPrincipal Long userId, @RequestBody CartItemUpdateDto dto) {
+        CartVo cartVo = cartService.deleteCartItem(userId, dto);
+        return ResponseVo.success("删除成功", cartVo);
+    }
 
     @PostMapping("/clear")
     public ResponseVo<CartVo> clearCart(@AuthenticationPrincipal Long userId, @RequestBody CartDto cartDto) {

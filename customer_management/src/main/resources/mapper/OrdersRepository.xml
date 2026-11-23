@@ -18,4 +18,46 @@
     <update id="updateOrder" parameterType="com.whm.starbucks.pojo.entity.Orders">
         UPDATE orders SET order_status = #{orders.orderStatus}, pay_amount = #{orders.payAmount}, pickup_code = #{orders.pickupCode}, estimated_ready_time = #{orders.estimatedReadyTime}, remark = #{orders.remark}, is_deleted = #{orders.isDeleted}, gmt_create = #{orders.gmtCreate}, gmt_modified = #{orders.gmtModified} WHERE order_no = #{orders.orderNo}
     </update>
+
+    <!-- 「我的订单」：按 userId 过滤，走 idx_user_id。
+         order_status 用动态 SQL：传 null 时不拼这个条件，避免 "= null" 永不命中。 -->
+    <select id="selectOrdersByUserId" resultType="com.whm.starbucks.pojo.entity.Orders">
+        SELECT * FROM orders
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+        <if test="orderStatus != null">
+            AND order_status = #{orderStatus}
+        </if>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectOrderById" resultType="com.whm.starbucks.pojo.entity.Orders">
+        SELECT * FROM orders
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 状态机核心 SQL：expectedStatus 写进 WHERE，
+         把「读状态 → 判合法 → 改状态」压缩成一条原子的 CAS，避免并发下状态倒退。 -->
+    <update id="updateOrderStatus">
+        UPDATE orders
+        SET order_status = #{targetStatus},
+            gmt_modified = NOW()
+        WHERE id = #{id}
+          AND order_status = #{expectedStatus}
+          AND is_deleted = 0
+    </update>
+
+    <!-- 取餐核销用：必须同时限定门店和码，并且只查仍在履约中的状态。
+         1-待接单 2-制作中 3-待取餐 都在允许核销的范围内（门市可以“跳步”直接给客人）。
+         4/5/6 属终态，不在 SQL 里过滤，交给 Service 用状态机报错，便于提示“订单已完成”。 -->
+    <select id="selectByStoreAndPickupCode" resultType="com.whm.starbucks.pojo.entity.Orders">
+        SELECT * FROM orders
+        WHERE store_id = #{storeId}
+          AND pickup_code = #{pickupCode}
+          AND order_status IN (1, 2, 3)
+          AND is_deleted = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
 </mapper>

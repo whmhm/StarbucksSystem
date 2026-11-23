@@ -29,4 +29,30 @@
         DELETE FROM cart_item WHERE cart_id = #{cartId}
     </delete>
 
+    <!-- 越权防护的关键：条件里必须同时有 id 和 cart_id。
+         只按 id 删/改，等于把主键暴露给前端后任人操作。 -->
+    <select id="selectByIdAndCartId" resultType="com.whm.starbucks.pojo.entity.CartItem">
+        SELECT * FROM cart_item
+        WHERE id = #{id}
+          AND cart_id = #{cartId}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 整行覆盖：数量、单价、加价、行金额一次性写入。
+         行金额由 Service 算好，SQL 不做乘法，避免口径分叉。 -->
+    <update id="updateCartItemQuantity">
+        UPDATE cart_item
+        SET quantity             = #{item.quantity},
+            unit_price           = #{item.unitPrice},
+            customization_price  = #{item.customizationPrice},
+            item_total_price     = #{item.itemTotalPrice},
+            gmt_modified         = NOW()
+        WHERE id = #{item.id}
+          AND is_deleted = 0
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM cart_item WHERE id = #{id}
+    </delete>
+
 </mapper>
